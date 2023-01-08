@@ -59,6 +59,8 @@ class Synth {
 
     // Filter
     this.biquadFilter = new Filter(audioContext);
+    // prevent click when first note is played
+    this.biquadFilter.Q = 0;
 
     // Chorus
     this.chorus = new Chorus(audioContext, store);

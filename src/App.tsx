@@ -4,18 +4,17 @@ import { useReducer, useState } from 'react';
 // @ts-ignore next-line
 import EventEmitter from 'event-emitter';
 import queryString from 'query-string';
+import { unmute } from './unmute/unmute';
 import { reducer, initializeState } from './data/Reducer';
 import Synth from './audio/Synth';
 
 const eventEmitter = new EventEmitter();
-
 
 // Initialize the state.
 const urlData = queryString.parse(window.location.hash);
 const initialState = initializeState(urlData);
 
 let synth: any;
-
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -35,6 +34,7 @@ const App = () => {
   }
 
   if (!synth) {
+    unmute(audioContext, false, false);
     synth = new Synth({
       Amp: state.Amp,
       audioContext,
@@ -49,7 +49,6 @@ const App = () => {
     });
   }
 
-  console.log('dave state', state);
   return (
     <div>
       <h1>
