@@ -6,90 +6,92 @@ Chorus effect.
   chorus.connect(output)
 */
 export default class Chorus {
-  constructor (audioContext) {
-    this.gainNode = audioContext.createGain()
-    this.gainNode.gain.value = 0.5
+  constructor(audioContext) {
+    this.gainNode = audioContext.createGain();
+    this.gainNode.gain.value = 0.5;
 
     // Left Channel
-    this.leftChannel = audioContext.createStereoPanner()
-    this.leftChannel.pan.value = -1
-    this.delayNodeL = audioContext.createDelay()
-    this.delayNodeL.delayTime.value = 0.05
-    this.lfoL = audioContext.createOscillator()
-    this.lfoGainL = audioContext.createGain()
-    this.lfoL.start()
-    this.lfoL.type = 'triangle'
-    this.lfoL.frequency.value = 0.01
-    this.lfoGainL.gain.value = 0.02
-    this.lfoL.connect(this.lfoGainL)
-    this.lfoGainL.connect(this.delayNodeL.delayTime)
-    this.delayNodeL.connect(this.leftChannel)
-    this.leftChannel.connect(this.gainNode)
+    this.leftChannel = audioContext.createStereoPanner();
+    this.leftChannel.pan.value = -1;
+    this.delayNodeL = audioContext.createDelay();
+    this.delayNodeL.delayTime.value = 0.05;
+    this.lfoL = audioContext.createOscillator();
+    this.lfoGainL = audioContext.createGain();
+    this.lfoL.start();
+    this.lfoL.type = 'triangle';
+    this.lfoL.frequency.value = 0.01;
+    this.lfoGainL.gain.value = 0.02;
+    this.lfoL.connect(this.lfoGainL);
+    this.lfoGainL.connect(this.delayNodeL.delayTime);
+    this.delayNodeL.connect(this.leftChannel);
+    this.leftChannel.connect(this.gainNode);
 
     // Right Channel
-    this.rightChannel = audioContext.createStereoPanner()
-    this.rightChannel.pan.value = 1
-    this.delayNodeR = audioContext.createDelay()
-    this.delayNodeR.delayTime.value = 0.04
-    this.lfoR = audioContext.createOscillator()
-    this.lfoGainR = audioContext.createGain()
-    this.lfoR.start()
-    this.lfoR.type = 'triangle'
-    this.lfoR.frequency.value = 0.02
-    this.lfoGainR.gain.value = 0.03
-    this.lfoR.connect(this.lfoGainR)
-    this.lfoGainR.connect(this.delayNodeR.delayTime)
-    this.delayNodeR.connect(this.rightChannel)
-    this.rightChannel.connect(this.gainNode)
+    this.rightChannel = audioContext.createStereoPanner();
+    this.rightChannel.pan.value = 1;
+    this.delayNodeR = audioContext.createDelay();
+    this.delayNodeR.delayTime.value = 0.04;
+    this.lfoR = audioContext.createOscillator();
+    this.lfoGainR = audioContext.createGain();
+    this.lfoR.start();
+    this.lfoR.type = 'triangle';
+    this.lfoR.frequency.value = 0.02;
+    this.lfoGainR.gain.value = 0.03;
+    this.lfoR.connect(this.lfoGainR);
+    this.lfoGainR.connect(this.delayNodeR.delayTime);
+    this.delayNodeR.connect(this.rightChannel);
+    this.rightChannel.connect(this.gainNode);
 
-    this.inputLeft = this.delayNodeL
-    this.inputRight = this.delayNodeR
+    this.inputLeft = this.delayNodeL;
+    this.inputRight = this.delayNodeR;
   }
-  connect (output) {
-    this.gainNode.connect(output)
+  connect(output) {
+    this.gainNode.connect(output);
   }
-  disconnect () {
-    this.gainNode.disconnect()
-  }
-
-  set amount (val) {
-    val = Number(val)
-    if (!this.isNumeric(val)) return false
-    this.gainNode.gain.value = val / 100
+  disconnect() {
+    this.gainNode.disconnect();
   }
 
-  get amount () {
-    return this.gainNode.gain.value * 100
+  set amount(val) {
+    val = Number(val);
+    if (this.isNumeric(val)) {
+      this.gainNode.gain.value = val / 100;
+    }
   }
 
-  set time (val) {
-    val = Number(val)
-    if (!this.isNumeric(val)) return false
-    this.lfoL.frequency.value = (val / 1000) * 3
-    this.lfoR.frequency.value = (val / 1000)
+  get amount() {
+    return this.gainNode.gain.value * 100;
   }
 
-  get time () {
-    return this.gainNode.gain.value * 100
+  set time(val) {
+    val = Number(val);
+    if (this.isNumeric(val)) {
+      this.lfoL.frequency.value = (val / 1000) * 3;
+      this.lfoR.frequency.value = (val / 1000);
+    }
   }
 
-  get lfoInputTime () {
-    return this.lfoL.frequency
+  get time() {
+    return this.gainNode.gain.value * 100;
   }
 
-  get lfoInputAmount () {
-    return this.gainNode.gain
+  get lfoInputTime() {
+    return this.lfoL.frequency;
   }
 
-  isNumeric (val) {
+  get lfoInputAmount() {
+    return this.gainNode.gain;
+  }
+
+  isNumeric(val) {
     if (typeof val !== 'number') {
-      return false
+      return false;
     }
     if (isNaN(parseFloat(val))) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   }
 
 }

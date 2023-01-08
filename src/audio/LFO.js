@@ -9,132 +9,132 @@ let multiplier = 0.001
 lfo.connect(node.audioParam, multiplier)
 */
 
-import Coefficients from '../data/Coefficients.js'
+import Coefficients from '../data/Coefficients.js';
 
 export default class LFO {
-  constructor (props) {
-    this.name = props.name
-    this.id = props.id
+  constructor(props) {
+    this.name = props.name;
+    this.id = props.id;
 
-    this.min = props.min
-    this.max = props.max
-    this.destinations = props.destinations
-    this.multiplier = 1
-    this.freqMultiplier = 1
+    this.min = props.min;
+    this.max = props.max;
+    this.destinations = props.destinations;
+    this.multiplier = 1;
+    this.freqMultiplier = 1;
 
-    this._value = 0
-    this._shape = props.shape
-    this._frequency = 0
+    this._value = 0;
+    this._shape = props.shape;
+    this._frequency = 0;
 
-    this.audioContext = props.audioContext
-    this.lfo = this.audioContext.createOscillator()
-    this.lfoGain = this.audioContext.createGain()
-    this.lfo.start()
-    this.lfo.connect(this.lfoGain)
-    this.lfo.frequency.value = props.rate
-    this.lfoGain.gain.value = props.amount
-    this.updateShape(props.shape)
+    this.audioContext = props.audioContext;
+    this.lfo = this.audioContext.createOscillator();
+    this.lfoGain = this.audioContext.createGain();
+    this.lfo.start();
+    this.lfo.connect(this.lfoGain);
+    this.lfo.frequency.value = props.rate;
+    this.lfoGain.gain.value = props.amount;
+    this.updateShape(props.shape);
   }
 
-  connect (destination, multiplier) {
-    this.lfoGain.gain.value = this._value * multiplier
-    this.multiplier = multiplier
-    this.lfoGain.connect(destination)
+  connect(destination, multiplier) {
+    this.lfoGain.gain.value = this._value * multiplier;
+    this.multiplier = multiplier;
+    this.lfoGain.connect(destination);
   }
 
-  disconnect (destination) {
-    this.lfoGain.disconnect()
+  disconnect() {
+    this.lfoGain.disconnect();
   }
 
   // Allows an external controller to get a reference to this LFOs frequency.
-  get lfoInputFrequency () {
-    return this.lfo.frequency
+  get lfoInputFrequency() {
+    return this.lfo.frequency;
   }
 
   // Allows an external controller to get a reference to this LFOs amount.
-  get lfoInputAmount () {
-    return this.lfoGain.gain
+  get lfoInputAmount() {
+    return this.lfoGain.gain;
   }
 
-  set rate (val) {
-    this._frequency = val
+  set rate(val) {
+    this._frequency = val;
     if (val) {
-      this.updateRate(val)
+      this.updateRate(val);
     }
   }
 
-  updateRate (val) {
-    this.lfo.frequency.value = (val * val / 500) * this.freqMultiplier * 3
+  updateRate(val) {
+    this.lfo.frequency.value = (val * val / 500) * this.freqMultiplier * 3;
   }
 
-  set amount (val) {
-    this._value = val
-    this.updateAmount()
+  set amount(val) {
+    this._value = val;
+    this.updateAmount();
   }
 
-  updateAmount () {
-    this.lfoGain.gain.value = this._value * this.multiplier
+  updateAmount() {
+    this.lfoGain.gain.value = this._value * this.multiplier;
   }
 
-  set shape (val) {
-    this._shape = val
-    this.updateShape(val)
+  set shape(val) {
+    this._shape = val;
+    this.updateShape(val);
   }
 
-  updateShape (shape) {
+  updateShape(shape) {
     switch (shape) {
       case 'r':
-        shape = 'random'
-        break
+        shape = 'random';
+        break;
       case 'w':
-        shape = 'sawtooth'
-        break
+        shape = 'sawtooth';
+        break;
       case 's':
-        shape = 'square'
-        break
+        shape = 'square';
+        break;
       case 't':
-        shape = 'triangle'
-        break
+        shape = 'triangle';
+        break;
     }
 
     if (shape === 'random') {
-      let waveData = this.generateRandomShape()
-      this.lfo.setPeriodicWave(waveData)
-      this.freqMultiplier = 0.01
-      this.updateRate(this._frequency)
+      let waveData = this.generateRandomShape();
+      this.lfo.setPeriodicWave(waveData);
+      this.freqMultiplier = 0.01;
+      this.updateRate(this._frequency);
     } else if (shape === 'square') {
-      let waveData = this.generateSquareShape()
-      this.lfo.setPeriodicWave(waveData)
-      this.freqMultiplier = 1
-      this.updateRate(this._frequency)
+      let waveData = this.generateSquareShape();
+      this.lfo.setPeriodicWave(waveData);
+      this.freqMultiplier = 1;
+      this.updateRate(this._frequency);
     } else if (shape === 'sawtooth') {
-      let waveData = this.generateSawtoothShape()
-      this.lfo.setPeriodicWave(waveData)
-      this.freqMultiplier = 1
-      this.updateRate(this._frequency)
+      let waveData = this.generateSawtoothShape();
+      this.lfo.setPeriodicWave(waveData);
+      this.freqMultiplier = 1;
+      this.updateRate(this._frequency);
     } else {
       // We use the default triangle shape only right now.
-      this.lfo.type = shape
-      this.freqMultiplier = 1
-      this.updateRate(this._frequency)
+      this.lfo.type = shape;
+      this.freqMultiplier = 1;
+      this.updateRate(this._frequency);
     }
   }
 
-  generateSquareShape () {
-    let real = new Float32Array(Coefficients.square.real)
-    let imag = new Float32Array(Coefficients.square.imag)
-    return this.audioContext.createPeriodicWave(real, imag)
+  generateSquareShape() {
+    let real = new Float32Array(Coefficients.square.real);
+    let imag = new Float32Array(Coefficients.square.imag);
+    return this.audioContext.createPeriodicWave(real, imag);
   }
 
-  generateSawtoothShape () {
-    let real = new Float32Array(Coefficients.sawtooth.real)
-    let imag = new Float32Array(Coefficients.sawtooth.imag)
-    return this.audioContext.createPeriodicWave(real, imag)
+  generateSawtoothShape() {
+    let real = new Float32Array(Coefficients.sawtooth.real);
+    let imag = new Float32Array(Coefficients.sawtooth.imag);
+    return this.audioContext.createPeriodicWave(real, imag);
   }
 
-  generateRandomShape () {
-    let real = new Float32Array(Coefficients.noise.real)
-    let imag = new Float32Array(Coefficients.noise.imag)
-    return this.audioContext.createPeriodicWave(real, imag)
+  generateRandomShape() {
+    let real = new Float32Array(Coefficients.noise.real);
+    let imag = new Float32Array(Coefficients.noise.imag);
+    return this.audioContext.createPeriodicWave(real, imag);
   }
 }

@@ -7,12 +7,12 @@ import queryString from 'query-string';
 import { reducer, initializeState } from './data/Reducer';
 import Synth from './audio/Synth';
 
-const eventEmitter = new EventEmitter()
+const eventEmitter = new EventEmitter();
 
 
 // Initialize the state.
-let urlData = queryString.parse(window.location.hash)
-let initialState = initializeState(urlData)
+const urlData = queryString.parse(window.location.hash);
+const initialState = initializeState(urlData);
 
 let synth: any;
 
@@ -46,7 +46,7 @@ const App = () => {
       Master: state.Master,
       Oscillators: state.Oscillators,
       store: state, // ?
-    })
+    });
   }
 
   console.log('dave state', state);
@@ -60,7 +60,7 @@ const App = () => {
     </div >
   );
 
-}
+};
 
 export default App;
 

@@ -3,5 +3,7 @@ import App from './App';
 import "./styles.scss";
 import { createRoot } from 'react-dom/client';
 const container = document.getElementById('app');
-const root = createRoot(container!);
-root.render(<App />);
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
+}
