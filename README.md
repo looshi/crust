@@ -2,30 +2,28 @@
 
 The crustiest web synth.
 
-## Install
+## Install and Run
 
 ```sh
+# Clone repo and install dependencies
+git clone git@github.com:looshi/crust.git
+cd crust
 npm i
 ```
 
-## Run
-
 ```sh
+# Run in localhost
 npm start
 ```
 
-## Build
-
 ```sh
+# Build assets for deployed site, will appear in dist folder
 npm run build-prod
 ```
 
-## Test
-
-To run unit tests:
-
 ```sh
-npm test
+# run tests
+npm run test
 ```
 
 ## Credits

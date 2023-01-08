@@ -16,6 +16,14 @@ const config = {
         exclude: /node_modules/
       },
       {
+        test: /\.worker\.js$/,
+        exclude: /node_modules/,
+        use: [
+          'worker-loader',
+          'babel-loader'
+        ]
+      },
+      {
         test: /\.css$/,
         use: [
           'style-loader',
