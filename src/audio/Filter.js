@@ -3,11 +3,11 @@ Filter
 Same API as biquadFilterNode.
 Uses multiple instances of the filter for greater effect.
 */
-import {limit} from '../helpers/helpers.js';
+import { limit } from '../helpers/helpers.js';
 const FILTER_INSTANCES_COUNT = 10;
 
 export default class Filter {
-  constructor (audioContext) {
+  constructor(audioContext) {
     this.filters = [];
     this._frequency = 200;
     this.audioContext = audioContext;
@@ -30,28 +30,29 @@ export default class Filter {
     this.input = this.filters[this.filters.length - 1];
   }
 
-  set frequency (val) {
+  set frequency(val) {
     this.filters.forEach((filter) => {
       filter.frequency.value = val;
     });
   }
 
-  set Q (val) {
+  set Q(val) {
     this.filters.forEach((filter) => {
       filter.Q.value = val / (FILTER_INSTANCES_COUNT * 3);
     });
   }
 
-  cancelScheduledValues (now) {
+  cancelScheduledValues(now) {
     this.filters.forEach((filter) => {
       filter.frequency.cancelScheduledValues(now);
     });
   }
 
-  setTargetAtTime (freq, start, end) {
+  setTargetAtTime(freq, start, end) {
     this.filters.forEach((filter, index) => {
       let offset = index * Math.random() * 10;
       freq = limit(60, 20000, freq - offset);
+      console.log('dave 2', freq, start, end);
       filter.frequency.setTargetAtTime(freq, start, end);
     });
   }

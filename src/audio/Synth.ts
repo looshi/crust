@@ -12,19 +12,58 @@ import Arpeggiator from './Arpeggiator/Arpeggiator.js';
 import { limit } from '../helpers/helpers.js';
 import Actions from '../data/Actions.js';
 
+import { FilterStateType, EffectsStateType, LFODestination } from '../types/Types';
+
+type Props = {
+  Amp: any,
+  audioContext: AudioContext,
+  dispatch: (args: any) => any,
+  Effects: EffectsStateType,
+  eventEmitter: { on: (...args: any[]) => any },
+  FilterState: FilterStateType,
+  LFOs: any[],
+  Master: { [key: string]: number },
+  Oscillators: any[],
+  store: { [key: string]: number },
+}
+
 class Synth {
-  constructor({
-    Amp,
-    audioContext,
-    dispatch,
-    Effects,
-    eventEmitter,
-    FilterState,
-    LFOs,
-    Master,
-    Oscillators,
-    store,
-  }) {
+  FilterState: Props['FilterState'];
+  Amp: Props['Amp'];
+  Master: Props['Master'];
+  dispatch: Props['dispatch'];
+  audioContext: Props['audioContext'];
+  masterGain: GainNode;
+  vcaGain: GainNode;
+  limiter: DynamicsCompressorNode;
+  distortion: WaveShaperNode;
+  oscillatorsBus: GainNode;
+  oscillators: Oscillator[];
+  biquadFilter: Filter;
+  freqAttack: number;
+  freqDecay: number;
+  freqFrequency: number;
+  freqSustain: number;
+  freqRelease: number;
+  freqRes: number;
+  chorus: Chorus;
+  Arpeggiator: Arpeggiator;
+  ArpNotes: any[];
+  LFOs: LFO[];
+
+  constructor(props: Props) {
+    let {
+      Amp,
+      audioContext,
+      dispatch,
+      Effects,
+      eventEmitter,
+      FilterState,
+      LFOs,
+      Master,
+      Oscillators,
+      store,
+    } = props;
 
     this.FilterState = FilterState;
     this.Amp = Amp;
@@ -61,9 +100,16 @@ class Synth {
     this.biquadFilter = new Filter(audioContext);
     // prevent click when first note is played
     this.biquadFilter.Q = 0;
+    this.freqAttack = FilterState.attack;
+    this.freqDecay = FilterState.decay;
+    this.freqFrequency = FilterState.freq;
+    this.freqSustain = FilterState.sustain;
+    this.freqRelease = FilterState.release;
+    this.freqRes = FilterState.res;
+
 
     // Chorus
-    this.chorus = new Chorus(audioContext, store);
+    this.chorus = new Chorus(audioContext);
     this.chorus.amount = Effects.chorusAmount;
     this.chorus.time = Effects.chorusTime;
 
@@ -98,10 +144,10 @@ class Synth {
     this.LFOs = [];
     this.initLFOs(LFOs, audioContext);
 
-    this.startListeners(eventEmitter, audioContext);
+    this.startListeners(eventEmitter);
   }
 
-  noteOn(noteNumber, time) {
+  noteOn(noteNumber: number, time: number) {
     if (!time) {
       time = this.audioContext.currentTime;
     }
@@ -112,7 +158,7 @@ class Synth {
     this.filterEnvelopeOn(time);
   }
 
-  noteOff(time) {
+  noteOff(time: number) {
     if (!time) {
       time = this.audioContext.currentTime;
     }
@@ -120,27 +166,52 @@ class Synth {
     this.filterEnvelopeOff(time);
   }
 
-  set ampDecay(decay) {
-    let { attack, sustain } = this.Amp;
-    this.Arpeggiator.noteLength = attack + decay + sustain;
+
+  set(property: keyof Synth, value: string | number) {
+    this[property] = value;
   }
 
-  set ampAttack(attack) {
+
+  setAmpAttack(attack: number) {
     let { decay, sustain } = this.Amp;
     this.Arpeggiator.noteLength = attack + decay + sustain;
   }
 
-  set ampSustain(sustain) {
+  setAmpSustain(sustain: number) {
     let { attack, decay } = this.Amp;
+    this.Arpeggiator.noteLength = attack + decay + sustain;
+  }
+  setAmpDecay(decay: number) {
+    let { attack, sustain } = this.Amp;
     this.Arpeggiator.noteLength = attack + decay + sustain;
   }
 
 
-  initOscillators(Oscillators, audioContext, Effects) {
+
+  // setFreqAttack(val) {
+  //   this.freqAttack = val;
+  // }
+  // setFreqSustain(val) {
+  //   this.freqSustain = val;
+  // }
+  // setFreqDecay(val) {
+  //   this.freqDecay = val;
+  // }
+  // setFreqRelease(val) {
+  //   this.freqRelease = val;
+  // }
+  // setFreqFrequency(val) {
+  //   this.freqFrequency = val;
+  // }
+  // setFreqRes(val) {
+  //   this.freqRes = val;
+  // }
+
+
+  initOscillators(Oscillators: Oscillator[], audioContext: AudioContext, Effects: EffectsStateType) {
     Oscillators.map((o) => {
       let options = {
         id: o.id,
-        name: o.name,
         computedChannelData: o.computedChannelData,
         detune: o.detune,
         octave: o.octave,
@@ -164,12 +235,12 @@ class Synth {
     'computedChannelData',
     'glide'
   */
-  setOsc(index, property, val) {
+  setOsc(index: number, property: keyof Oscillator, val: any) {
     this.oscillators[index][property] = val;
   }
 
-  initLFOs(LFOs, audioContext) {
-    LFOs.map((l) => {
+  initLFOs(LFOs: LFO[], audioContext: AudioContext) {
+    LFOs.map((l: LFO) => {
       let options = {
         name: l.name,
         id: l.id,
@@ -178,7 +249,7 @@ class Synth {
         rate: l.rate,
         min: l.min,
         max: l.max,
-        destination: l.destination,
+        destinations: l.destinations,
         audioContext,
       };
 
@@ -193,12 +264,13 @@ class Synth {
     'min',
     'max',
   */
-  setLFO(index, property, val) {
+  // { -readonly [P in keyof LFO]: LFO[P] }
+  setLFO(index: number, property: keyof LFO, val: any) {
     this.LFOs[index][property] = val;
   }
 
   // Route LFOs to targets.
-  routeLFO(lfo, destination) {
+  routeLFO(lfo: LFO, destination: LFODestination) {
     lfo.disconnect();
     // Disconnect the LFO from any oscillators ( if it was set to any ).
     this.oscillators.map((osc) => {
@@ -229,10 +301,13 @@ class Synth {
     }
     if (id && id[0] === 'o' && id !== 'oscAll') {
       let osc = this.oscillators.find((osc) => osc.id === id);
+      if (!osc) {
+        console.warn("Osc not found", id);
+      }
       if (destination.property === 'detune') {
-        osc.connectPitchToLFO(lfo);
+        osc?.connectPitchToLFO(lfo);
       } else if (destination.property === 'amount') {
-        osc.connectAmountToLFO(lfo);
+        osc?.connectAmountToLFO(lfo);
       }
     }
 
@@ -248,14 +323,17 @@ class Synth {
     // LFO to LFO.
     if (id && id[0] === 'l') {
       let targetLFO = this.LFOs.find((l) => l.id === id);
-      lfo.connect(targetLFO.lfoInputFrequency, 1);
+      if (!targetLFO) {
+        console.warn("Target LFO not found:", id);
+      }
+      lfo.connect(targetLFO?.lfoInputFrequency, 1);
     }
   }
 
   // Stores the notes played in the last few seconds from the last note played.
   // The notes will played in the order recieved by the arpeggiator.
   // Modeled after how the Akai Ax60 collects notes for its arpeggiator.
-  collectArpNotes(noteNumber) {
+  collectArpNotes(noteNumber: number) {
     this.ArpNotes = this.ArpNotes.filter((note) => {
       return note.time > Date.now() - 5000;
     });
@@ -265,28 +343,26 @@ class Synth {
     this.Arpeggiator.notes = notes;
   }
 
-  set chorusAmount(amount) {
+  set chorusAmount(amount: number) {
     this.chorus.amount = amount;
   }
 
-  set chorusTime(time) {
+  set chorusTime(time: number) {
     this.chorus.time = time;
   }
 
   //  Arpeggiator properties.
-  set arpIsOn(isOn) {
+  set arpIsOn(isOn: 1 | 0) {
     this.Arpeggiator.isOn = isOn;
   }
-  set arpTempo(tempo) {
+  set arpTempo(tempo: number) {
     this.Arpeggiator.tempo = tempo;
   }
 
 
-
-
-  startListeners(eventEmitter) {
+  startListeners(eventEmitter: Props['eventEmitter']) {
     // Arpeggiator events.  These notes are scheduled in the near future.
-    eventEmitter.on('ARP_NOTE_ON', (time, noteNumber) => {
+    eventEmitter.on('ARP_NOTE_ON', (time: number, noteNumber: number) => {
       this.dispatch(Actions.keyboardNoteShow(noteNumber));
       this.ampEnvelopeOn(time);
       this.filterEnvelopeOn(time);
@@ -294,7 +370,7 @@ class Synth {
         osc.scheduleNote(time, noteNumber);
       });
     });
-    eventEmitter.on('ARP_NOTE_OFF', (time, noteNumber) => {
+    eventEmitter.on('ARP_NOTE_OFF', (time: number, noteNumber: number) => {
       setTimeout(() => {
         this.dispatch(Actions.keyboardNoteHide(noteNumber));
       }, 50);
@@ -302,34 +378,34 @@ class Synth {
       this.filterEnvelopeOff(time);
     });
     // Collects the recent notes played when the ARP is ON to form a sequence.
-    eventEmitter.on('ARP_COLLECT_NOTE', (noteNumber) => {
+    eventEmitter.on('ARP_COLLECT_NOTE', (noteNumber: number) => {
       this.collectArpNotes(noteNumber);
     });
   }
 
-  filterEnvelopeOn(now) {
-    let { attack, decay, sustain, freq } = this.FilterState;
-    attack = limit(0.001, 1, attack / 100);
-    decay = limit(0.001, 1, decay / 100);
-    sustain = (sustain / 100) * freq; // Sustain is a percentage of freq.
-    sustain = limit(60, 20000, sustain * 100);
-    freq = limit(60, 20000, freq * 100);
 
-    this.biquadFilter.Q = this.FilterState.res;
+
+  filterEnvelopeOn(now: number) {
+    const attack = limit(0.001, 1, this.freqAttack / 100);
+    const decay = limit(0.001, 1, this.freqDecay / 100);
+    // let sustain: number = (sustain / 100) * this.freqFrequency; // Sustain is a percentage of freq.  ?  Still need this ??
+    let sustain = limit(60, 20000, this.freqSustain * 100);
+    const freq = limit(60, 20000, this.freqFrequency * 100);
+
+    this.biquadFilter.Q = this.freqRes;
     this.biquadFilter.cancelScheduledValues(now);
     this.biquadFilter.setTargetAtTime(freq, now, attack);
     this.biquadFilter.setTargetAtTime(sustain, now + attack, decay);
   }
 
-  filterEnvelopeOff(now) {
-    let { release } = this.FilterState;
-    release = limit(0.02, 1, release / 50);
+  filterEnvelopeOff(now: number) {
+    const release = limit(0.02, 1, this.freqRelease / 50);
 
     this.biquadFilter.cancelScheduledValues(now);
     this.biquadFilter.setTargetAtTime(60, now, release);
   }
 
-  ampEnvelopeOn(now) {
+  ampEnvelopeOn(now: number) {
     let { gain } = this.vcaGain;
     let { attack, decay, sustain } = this.Amp;
     attack = limit(0.003, 1, attack / 100);
@@ -341,7 +417,7 @@ class Synth {
     gain.setTargetAtTime(sustain, now + attack, decay);
   }
 
-  ampEnvelopeOff(now) {
+  ampEnvelopeOff(now: number) {
     let { gain } = this.vcaGain;
     let { release } = this.Amp;
     release = limit(0.02, 1, release / 100);

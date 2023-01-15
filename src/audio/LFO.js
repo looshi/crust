@@ -50,10 +50,16 @@ export default class LFO {
   get lfoInputFrequency() {
     return this.lfo.frequency;
   }
+  set lfoInputFrequency(value) {
+    this.lfo.frequency = value;
+  }
 
   // Allows an external controller to get a reference to this LFOs amount.
   get lfoInputAmount() {
     return this.lfoGain.gain;
+  }
+  set lfoInputAmount(value) {
+    this.lfoGain.gain = value;
   }
 
   set rate(val) {

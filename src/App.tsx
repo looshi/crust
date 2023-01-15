@@ -7,6 +7,7 @@ import queryString from 'query-string';
 import { unmute } from './unmute/unmute';
 import { reducer, initializeState } from './data/Reducer';
 import Synth from './audio/Synth';
+import Actions from './data/Actions';
 
 const eventEmitter = new EventEmitter();
 
@@ -17,7 +18,7 @@ const initialState = initializeState(urlData);
 let synth: any;
 
 const App = () => {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer<React.Reducer<any, any>>(reducer, initialState);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 
   if (!audioContext) {
@@ -54,8 +55,24 @@ const App = () => {
       <h1>
         Crust
       </h1>
-      <button onClick={() => synth.noteOn(49)}>Note On</button>
-      <button onClick={() => synth.noteOff()}>Note Off</button>
+      <button
+        onMouseDown={() => synth.noteOn(49)}
+        onMouseUp={() => synth.noteOff()}
+      >Note </button>
+      <input
+        type="range"
+        id="amp-attack"
+        name="amp-attack"
+        min="0"
+        max="100"
+        step="1"
+        onChange={(e) => {
+          dispatch(Actions.filterSliderChanged("amp-attack", e.target.value, "amp-attack"));
+          // synth.setAmpAttack(e.target.value);
+          // synth.setFreqAttack(e.target.value);
+        }}
+      />
+      <label htmlFor="amp-attack">amp attack</label>
     </div >
   );
 
