@@ -1,13 +1,13 @@
 
 import * as React from 'react';
-import { useReducer, useState } from 'react';
+import { useReducer, useState, useEffect } from 'react';
 // @ts-ignore next-line
 import EventEmitter from 'event-emitter';
 import queryString from 'query-string';
 import { unmute } from './unmute/unmute';
 import { reducer, initializeState } from './data/Reducer';
 import Synth from './audio/Synth';
-import Actions from './data/Actions';
+import { Actions } from './types/Types';
 
 const eventEmitter = new EventEmitter();
 
@@ -15,11 +15,15 @@ const eventEmitter = new EventEmitter();
 const urlData = queryString.parse(window.location.hash);
 const initialState = initializeState(urlData);
 
-let synth: any;
+let synth: Synth;
 
 const App = () => {
   const [state, dispatch] = useReducer<React.Reducer<any, any>>(reducer, initialState);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+
+  useEffect(() => {
+    synth?.update(state);
+  }, [state])
 
   if (!audioContext) {
     return (
@@ -37,16 +41,17 @@ const App = () => {
   if (!synth) {
     unmute(audioContext, false, false);
     synth = new Synth({
-      Amp: state.Amp,
       audioContext,
       dispatch,
-      Effects: state.Effects,
       eventEmitter,
-      FilterState: state.Filter,
-      LFOs: state.LFOs,
-      Master: state.Master,
-      Oscillators: state.Oscillators,
-      store: state, // ?
+      state,
+      // Amp: state.Amp,
+      // Effects: state.Effects,
+      // FilterState: state.Filter,
+      // LFOs: state.LFOs,
+      // Master: state.Master,
+      // Oscillators: state.Oscillators,
+
     });
   }
 
@@ -58,25 +63,131 @@ const App = () => {
       <button
         onMouseDown={() => synth.noteOn(49)}
         onMouseUp={() => synth.noteOff()}
-      >Note </button>
-      <input
-        type="range"
-        id="amp-attack"
-        name="amp-attack"
-        min="0"
-        max="100"
-        step="1"
-        onChange={(e) => {
-          dispatch(Actions.filterSliderChanged("amp-attack", e.target.value, "amp-attack"));
-          // synth.setAmpAttack(e.target.value);
-          // synth.setFreqAttack(e.target.value);
-        }}
+      >Note</button>
+      <h2>
+        Amp
+      </h2>
+      <Fader
+        value={state.Amp.attack}
+        dispatch={dispatch}
+        label="attack"
+        actionType={Actions.AMP_ATTACK}
       />
-      <label htmlFor="amp-attack">amp attack</label>
+      <Fader
+        value={state.Amp.decay}
+        dispatch={dispatch}
+        label="decay"
+        actionType={Actions.AMP_DECAY}
+      />
+
+      <Fader
+        value={state.Amp.sustain}
+        dispatch={dispatch}
+        label="sustain"
+        actionType={Actions.AMP_SUSTAIN}
+      />
+
+      <Fader
+        value={state.Amp.release}
+        dispatch={dispatch}
+        label="release"
+        actionType={Actions.AMP_RELEASE}
+      />
+
+
+      <h2>Filter</h2>
+      <Fader
+        value={state.Filter.freq}
+        dispatch={dispatch}
+        label="filter freq"
+        actionType={Actions.FILTER_FREQUENCY}
+      />
+
+      <Fader
+        value={state.Filter.res}
+        dispatch={dispatch}
+        label="filter res"
+        actionType={Actions.FILTER_RES}
+      />
+
+      <Fader
+        value={state.Filter.attack}
+        dispatch={dispatch}
+        label="filter attack"
+        actionType={Actions.FILTER_ATTACK}
+      />
+
+
+      <Fader
+        value={state.Filter.sustain}
+        dispatch={dispatch}
+        label="filter sustain"
+        actionType={Actions.FILTER_SUSTAIN}
+      />
+
+      <Fader
+        value={state.Filter.decay}
+        dispatch={dispatch}
+        label="filter decay"
+        actionType={Actions.FILTER_DECAY}
+      />
+
+      <Fader
+        value={state.Filter.release}
+        dispatch={dispatch}
+        label="filter release"
+        actionType={Actions.FILTER_RELEASE}
+      />
+
+      <h2>Effects</h2>
+      <Fader
+        value={state.Effects.chorusAmount}
+        dispatch={dispatch}
+        label="chorus amount"
+        actionType={Actions.CHORUS_AMOUNT}
+      />
+
+      <Fader
+        value={state.Effects.chorusTime}
+        dispatch={dispatch}
+        label="chorus time"
+        actionType={Actions.CHORUS_TIME}
+      />
+
     </div >
   );
 
 };
+
+const Fader = ({
+  value,
+  dispatch,
+  label,
+  actionType,
+}: {
+  value: number,
+  dispatch: React.Dispatch<any>,
+  label: string,
+  actionType: keyof typeof Actions,
+}) => {
+  return <div>
+    <input
+      type="range"
+      id="freq-attack"
+      name="freq-attack"
+      min="0"
+      max="100"
+      step="1"
+      onChange={(e) => {
+        dispatch({
+          type: actionType,
+          value: e.target.value
+        });
+      }}
+    />
+    <label htmlFor="amp-attack">{label} {value}</label>
+  </div >
+}
 
 export default App;
 

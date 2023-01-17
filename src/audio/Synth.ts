@@ -15,22 +15,16 @@ import Actions from '../data/Actions.js';
 import { FilterStateType, EffectsStateType, LFODestination } from '../types/Types';
 
 type Props = {
-  Amp: any,
   audioContext: AudioContext,
   dispatch: (args: any) => any,
-  Effects: EffectsStateType,
   eventEmitter: { on: (...args: any[]) => any },
-  FilterState: FilterStateType,
-  LFOs: any[],
-  Master: { [key: string]: number },
-  Oscillators: any[],
-  store: { [key: string]: number },
+  state: { [key: string]: any },
 }
 
 class Synth {
-  FilterState: Props['FilterState'];
-  Amp: Props['Amp'];
-  Master: Props['Master'];
+  FilterState: FilterStateType;
+  Amp: { [key: string]: number };
+  Master: { [key: string]: number };
   dispatch: Props['dispatch'];
   audioContext: Props['audioContext'];
   masterGain: GainNode;
@@ -40,12 +34,14 @@ class Synth {
   oscillatorsBus: GainNode;
   oscillators: Oscillator[];
   biquadFilter: Filter;
-  freqAttack: number;
-  freqDecay: number;
-  freqFrequency: number;
-  freqSustain: number;
-  freqRelease: number;
-  freqRes: number;
+
+  freqAttack: number = 0;
+  freqDecay: number = 0;
+  freqFrequency: number = 0;
+  freqSustain: number = 0;
+  freqRelease: number = 0;
+  freqRes: number = 0;
+
   chorus: Chorus;
   Arpeggiator: Arpeggiator;
   ArpNotes: any[];
@@ -53,21 +49,15 @@ class Synth {
 
   constructor(props: Props) {
     let {
-      Amp,
       audioContext,
       dispatch,
-      Effects,
       eventEmitter,
-      FilterState,
-      LFOs,
-      Master,
-      Oscillators,
-      store,
+      state,
     } = props;
 
-    this.FilterState = FilterState;
-    this.Amp = Amp;
-    this.Master = Master;
+    this.FilterState = state.Filter;
+    this.Amp = state.Amp;
+    this.Master = state.Master;
     this.dispatch = dispatch;
 
     this.audioContext = audioContext;
@@ -94,24 +84,14 @@ class Synth {
     this.oscillatorsBus = audioContext.createGain();
     this.oscillatorsBus.gain.value = 1;
     this.oscillators = [];
-    this.initOscillators(Oscillators, audioContext, Effects);
+    this.initOscillators(state.Oscillators, audioContext, state.Effects);
 
     // Filter
     this.biquadFilter = new Filter(audioContext);
-    // prevent click when first note is played
-    this.biquadFilter.Q = 0;
-    this.freqAttack = FilterState.attack;
-    this.freqDecay = FilterState.decay;
-    this.freqFrequency = FilterState.freq;
-    this.freqSustain = FilterState.sustain;
-    this.freqRelease = FilterState.release;
-    this.freqRes = FilterState.res;
-
+    this.biquadFilter.Q = 0;  // prevent click when first note is played
 
     // Chorus
     this.chorus = new Chorus(audioContext);
-    this.chorus.amount = Effects.chorusAmount;
-    this.chorus.time = Effects.chorusTime;
 
     // Arpeggiator
     let options = {
@@ -136,18 +116,20 @@ class Synth {
     this.chorus.connect(this.masterGain);
     this.vcaGain.connect(this.masterGain);
 
+    this.masterGain.gain.value = limit(0, 0.05, this.Master.volume / 100);
+
     this.masterGain.connect(this.limiter);
-    this.masterGain.gain.value = limit(0, 1, this.Master.volume / 100);
+
     this.limiter.connect(audioContext.destination);
 
     // LFOs
     this.LFOs = [];
-    this.initLFOs(LFOs, audioContext);
+    this.initLFOs(state.LFOs, audioContext);
 
     this.startListeners(eventEmitter);
   }
 
-  noteOn(noteNumber: number, time: number) {
+  noteOn(noteNumber: number, time?: number) {
     if (!time) {
       time = this.audioContext.currentTime;
     }
@@ -158,7 +140,7 @@ class Synth {
     this.filterEnvelopeOn(time);
   }
 
-  noteOff(time: number) {
+  noteOff(time?: number) {
     if (!time) {
       time = this.audioContext.currentTime;
     }
@@ -167,9 +149,28 @@ class Synth {
   }
 
 
-  set(property: keyof Synth, value: string | number) {
-    this[property] = value;
+  update(state: any) {
+    this.freqAttack = state.Filter.attack;
+    this.freqDecay = state.Filter.decay;
+    this.freqFrequency = state.Filter.freq;
+    this.freqSustain = state.Filter.sustain;
+    this.freqRelease = state.Filter.release;
+    this.freqRes = state.Filter.res;
+    this.chorus.amount = state.Effects.chorusAmount;
+    this.chorus.time = state.Effects.chorusTime;
+
+    state.Oscillators.forEach((osc: Oscillator, index: number) => {
+      this.oscillators[index].update(osc);
+    })
+
   }
+
+  // updateOsc(index: number, property: keyof Oscillator, val: any) {
+  //   this.oscillators[index][property] = val;
+  // }
+  // set(property: keyof Synth, value: string | number) {
+  //   this[property] = value;
+  // }
 
 
   setAmpAttack(attack: number) {
@@ -235,9 +236,7 @@ class Synth {
     'computedChannelData',
     'glide'
   */
-  setOsc(index: number, property: keyof Oscillator, val: any) {
-    this.oscillators[index][property] = val;
-  }
+
 
   initLFOs(LFOs: LFO[], audioContext: AudioContext) {
     LFOs.map((l: LFO) => {
@@ -383,13 +382,11 @@ class Synth {
     });
   }
 
-
-
   filterEnvelopeOn(now: number) {
     const attack = limit(0.001, 1, this.freqAttack / 100);
     const decay = limit(0.001, 1, this.freqDecay / 100);
-    // let sustain: number = (sustain / 100) * this.freqFrequency; // Sustain is a percentage of freq.  ?  Still need this ??
-    let sustain = limit(60, 20000, this.freqSustain * 100);
+    let sustain: number = (this.freqSustain / 100) * this.freqFrequency; // Sustain is a percentage of freq.  ?  Still need this ??
+    sustain = limit(60, 20000, sustain * 100);
     const freq = limit(60, 20000, this.freqFrequency * 100);
 
     this.biquadFilter.Q = this.freqRes;

@@ -36,6 +36,15 @@ export default class Oscillator {
     this.updatePitch();
   }
 
+  update(osc) {
+    this.amount = osc.amount;
+    this.detune = osc.detune;
+    this.octave = osc.octave;
+    this.note = osc.note;
+    this.glide = osc.glide;
+    // TODO add computedChannelData ?
+  }
+
   connectPitchToLFO(lfo, persist = false) {
     if (this.wavSource) {
       // Connect now if wave is loaded.

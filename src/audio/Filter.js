@@ -52,7 +52,6 @@ export default class Filter {
     this.filters.forEach((filter, index) => {
       let offset = index * Math.random() * 10;
       freq = limit(60, 20000, freq - offset);
-      console.log('dave 2', freq, start, end);
       filter.frequency.setTargetAtTime(freq, start, end);
     });
   }

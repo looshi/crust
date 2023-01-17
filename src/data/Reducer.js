@@ -210,22 +210,22 @@ function KeyboardReducer(state, action) {
 
 function AmpReducer(state, action) {
   switch (action.type) {
-    case 'AMP_SLIDER_CHANGED':
-      if (action.name === 'amp-attack') {
-        state.attack = action.value;
-        updateURL('aa', action.value);
-      } else if (action.name === 'amp-decay') {
-        state.decay = action.value;
-        updateURL('ad', action.value);
-      } else if (action.name === 'amp-sustain') {
-        state.sustain = action.value;
-        updateURL('as', action.value);
-      } else if (action.name === 'amp-release') {
-        state.release = action.value;
-        updateURL('ar', action.value);
-      }
+    case 'AMP_ATTACK':
+      state.attack = action.value;
+      updateURL('aa', action.value);
       return Object.assign({}, state);
-
+    case 'AMP_DECAY':
+      state.decay = action.value;
+      updateURL('ad', action.value);
+      return Object.assign({}, state);
+    case 'AMP_SUSTAIN':
+      state.sustain = action.value;
+      updateURL('as', action.value);
+      return Object.assign({}, state);
+    case 'AMP_RELEASE':
+      state.release = action.value;
+      updateURL('ar', action.value);
+      return Object.assign({}, state);
     default:
       return state;
   }
@@ -233,43 +233,46 @@ function AmpReducer(state, action) {
 
 function FilterReducer(state, action) {
   switch (action.type) {
-    case 'FILTER_SLIDER_CHANGED':
-      if (action.name === 'filter-freq') {
-        state.freq = action.value;
-        updateURL('ff', action.value);
-      } else if (action.name === 'filter-res') {
-        state.res = action.value;
-        updateURL('fr', action.value);
-      } else if (action.name === 'filter-attack') {
-        state.attack = action.value;
-        updateURL('fa', action.value);
-      } else if (action.name === 'filter-decay') {
-        state.decay = action.value;
-        updateURL('fd', action.value);
-      } else if (action.name === 'filter-sustain') {
-        state.sustain = action.value;
-        updateURL('fs', action.value);
-      } else if (action.name === 'filter-release') {
-        state.release = action.value;
-        updateURL('fre', action.value);
-      }
+    case 'FILTER_FREQUENCY':
+      state.freq = action.value;
+      updateURL('ff', action.value);
       return Object.assign({}, state);
-
+    case 'FILTER_RES':
+      state.res = action.value;
+      updateURL('fr', action.value);
+      return Object.assign({}, state);
+    case 'FILTER_ATTACK':
+      state.attack = action.value;
+      updateURL('fa', action.value);
+      return Object.assign({}, state);
+    case 'FILTER_DECAY':
+      state.decay = action.value;
+      updateURL('fd', action.value);
+      return Object.assign({}, state);
+    case 'FILTER_SUSTAIN':
+      state.sustain = action.value;
+      updateURL('fs', action.value);
+      return Object.assign({}, state);
+    case 'FILTER_RELEASE':
+      state.release = action.value;
+      updateURL('fre', action.value);
+      return Object.assign({}, state);
     default:
       return state;
   }
 }
 
+
+
 function EffectsReducer(state, action) {
   switch (action.type) {
-    case 'CHORUS_SLIDER_CHANGED':
-      if (action.name === 'chorus-amount') {
-        state.chorusAmount = action.value;
-        updateURL('ca', action.value);
-      } else if (action.name === 'chorus-time') {
-        state.chorusTime = action.value;
-        updateURL('ct', action.value);
-      }
+    case 'CHORUS_AMOUNT':
+      state.chorusAmount = action.value;
+      updateURL('ca', action.value);
+      return Object.assign({}, state);
+    case 'CHORUS_TIME':
+      state.chorusTime = action.value;
+      updateURL('ct', action.value);
       return Object.assign({}, state);
     case 'GLIDE_CHANGED':
       state.glide = action.value;
